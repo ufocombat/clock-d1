@@ -90,20 +90,24 @@ void loop() {
  DateTime n = rtc.now();
  if (lSec!=n.second())
  {
-  
-  lcd.setCursor(0, 1);
-  lcd.print(Today(n)+" "+DayOfWeek(n));
-
   lcd.setCursor(0, 0);
   lcd.print(Time(n));
 
-  int am[4] = {12*60,17*60+58,18*60, 21*60};
+//  lcd.setCursor(0, 1);
+//  lcd.print(Today(n)+" "+DayOfWeek(n));
+
+  int am[] = {    
+    11*60+15,        
+    13*60,    
+    18*60,
+    21*60
+  };
   
   int nnn = n.minute()+n.hour()*60;
   boolean a=false;
 
   int i;
-  for (i=0; i < 4; i++){
+  for (i=0; i < (sizeof(am)/sizeof(int)); i++){
     if (am[i]>=nnn)
     {
       a=true;
@@ -113,10 +117,16 @@ void loop() {
  
   String l= "     ";
 
-  if (a)
+int r=0;
+int h=0;
+
+  if (a)  
   {
     int m = am[i]%60;
     DateTime b (n.year(),n.month(),n.day(),(int)((am[i]-m)/60),m,0);
+    r = b.minute();
+    h= b.hour();
+    
     TimeSpan t =  b-n;
     
     if ((t.hours()>=0)&&(t.minutes()>=0))
@@ -127,8 +137,12 @@ void loop() {
     if (t.hours()>9) l=" "+l;
   }
   
-  lcd.setCursor(11, 0); 
+  lcd.setCursor(16-l.length(), 0); 
   lcd.print(l);
+
+  lcd.setCursor(0, 1);
+  lcd.print((String)h+":"+norm(r));
+
 
   lSec=n.second();
  }
