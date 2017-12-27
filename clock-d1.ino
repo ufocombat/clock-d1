@@ -1,9 +1,12 @@
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
+#include "Arduino.h"
 #include "RTClib.h"
+#include "AlarmLib.h"
 
-LiquidCrystal_I2C lcd(0x3F,16,2); // 1-Выяснить адрес дисплея
+
 RTC_DS1307 rtc;
+LiquidCrystal_I2C lcd(0x3F,16,2); // 1-Выяснить адрес дисплея
 
 #define PIR_PIN D2  // Пир датчик
 
@@ -20,7 +23,7 @@ void setup() {
 
   pinMode(PIR_PIN, INPUT);
 
-  Serial.begin(57600);
+  Serial.begin(9600);
 //  Serial.println("Clock...");
 
   lcd.init();                     
@@ -41,67 +44,51 @@ void CheckTheLigt(boolean f)
    if (f) lcd.backlight(); else lcd.noBacklight();
 }
 
-String norm(int v)
-{
-  String work = (String)v;
-  while (work.length()<2) work ="0"+work;
-  return work;
-}
-
-String Today(DateTime n)
-{
-  return (String)n.year()+"."+(String)n.month()+"."+(String)n.day(); 
-}
-
-String Time(DateTime n)
-{  
-  return norm(n.hour())+":"+norm(n.minute())+":"+norm(n.second());
-}
-
-String DayOfWeek(DateTime n)
-{
-  char DOW[][4]={"SUN","MON","TUE","WED","THU","FRI","SAT"};
-  return DOW[n.dayOfTheWeek()];
-}
-
 volatile int lSec = 0;
 unsigned long time;
 
+int val;
 
-void showTimeSpan(const char* txt, const TimeSpan& ts) {
-    Serial.print(txt);
-    Serial.print(" ");
-    Serial.print(ts.days(), DEC);
-    Serial.print(" days ");
-    Serial.print(ts.hours(), DEC);
-    Serial.print(" hours ");
-    Serial.print(ts.minutes(), DEC);
-    Serial.print(" minutes ");
-    Serial.print(ts.seconds(), DEC);
-    Serial.print(" seconds (");
-    Serial.print(ts.totalseconds(), DEC);
-    Serial.print(" total seconds)");
-    Serial.println();
-}
-
+int am[] = {    
+  11*60+15,        
+  13*60,    
+  18*60,
+  21*60
+};
  
 void loop() {
-  
+ 
  DateTime n = rtc.now();
+ 
+  if (Serial.available())
+  {
+    val = Serial.parseInt();      
+    Alarm a = Alarm(val);
+    
+    am[0] = val;
+    Serial.print("Alarm on: ");
+    Serial.print(a.ToStr());        
+    
+    Serial.print(" (");        
+    Serial.print(val);
+    Serial.println(")");    
+    
+    Serial.println("Now: ");
+    Serial.println(Date2Str(n)+" "+DayOfWeek(n)+" "+Time2Str(n));
+    Serial.println();
+  }
+
+  
+
+ 
  if (lSec!=n.second())
  {
   lcd.setCursor(0, 0);
-  lcd.print(Time(n));
+  lcd.print(Time2Str(n));
 
 //  lcd.setCursor(0, 1);
 //  lcd.print(Today(n)+" "+DayOfWeek(n));
 
-  int am[] = {    
-    11*60+15,        
-    13*60,    
-    18*60,
-    21*60
-  };
   
   int nnn = n.minute()+n.hour()*60;
   boolean a=false;
@@ -131,7 +118,7 @@ int h=0;
     
     if ((t.hours()>=0)&&(t.minutes()>=0))
     {
-      l = (String)t.hours()+":"+norm(t.minutes());
+      l = (String)t.hours()+":"+Norm2Str(t.minutes());
     }
     
     if (t.hours()>9) l=" "+l;
@@ -141,15 +128,17 @@ int h=0;
   lcd.print(l);
 
   lcd.setCursor(0, 1);
-  lcd.print((String)h+":"+norm(r));
+  lcd.print((String)h+":"+Norm2Str(r));
 
 
   lSec=n.second();
  }
+else
+{
+  delay(300);
+} 
  
   if (digitalRead(PIR_PIN)==1) time = millis();  
  
-  CheckTheLigt(disp_light= millis()-time<20000); 
- 
-  delay(300);
+  CheckTheLigt(disp_light= millis()-time<20000);    
 }
