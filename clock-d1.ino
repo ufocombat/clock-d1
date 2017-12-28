@@ -1,6 +1,6 @@
+#include "Arduino.h"
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
-#include "Arduino.h"
 #include "RTClib.h"
 #include "AlarmLib.h"
 
@@ -22,7 +22,7 @@ int lSec = 0;
 unsigned long time;
 boolean colon=true;
 
-int am[] = {    
+int alarms[] = {    
   11*60,        
   13*60,    
   18*60  
@@ -33,7 +33,8 @@ void setup() {
   digitalWrite(LED_BUILTIN, HIGH);//Off for D1
   pinMode(PIR_PIN, INPUT);
 
-  Serial.begin(9600);
+  Serial.begin(57600);
+  delay(100);
 
 //  if (! rtc.begin()) {
 //    Serial.println("Couldn't find RTC");
@@ -49,84 +50,70 @@ void setup() {
 
     
   //rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); //Установить часы как Дата Компиляции Скетча
-  // January 21, 2014 at 3am you would call:
+  // January 21, 2014 at 3alarms you would call:
   // rtc.adjust(DateTime(2017, 1, 31, 14, 17, 0));  
 }
 
-void CheckTheLigt(boolean f)
+boolean FindNextAlarm(DateTime date, Alarm& alarm)
 {
-   if (f) lcd.backlight(); else lcd.noBacklight();
-}
-
-void loop() {
- 
- DateTime n = rtc.now();
- 
-  if (Serial.available())
-  {
-    Alarm alarm = Alarm(Serial.readString()); 
-    am[0] = alarm.minutes();
-    
-    Serial.print("Alarm on: ");
-    Serial.println(alarm.ToStr());        
-    
-    Serial.print("Now: ");
-    Serial.println(Date2StrFull(n));
-    Serial.println();
-  }
- 
- if (lSec!=n.second())
- {
-  lcd.setCursor(0, 0);
-  lcd.print(Time2StrDDMM(n,colon));
-  colon = !colon;
-
-  int nnn = n.minute()+n.hour()*60;
-  boolean a=false;
-
+  int nnn = date.minute()+date.hour()*60;
+  boolean a = false;
+  
   int i;
-  for (i=0; i < (sizeof(am)/sizeof(int)); i++){
-    if (am[i]>nnn)
+  for (i=0; i < (sizeof(alarms)/sizeof(int)); i++){
+    if (alarms[i]>nnn)
     {
       a=true;
       break;
     }
   }
+    
+  alarm = Alarm(alarms[i]);
+  return a;
+}
+
+void loop() {
  
-  String toTime= "     ";
-
-  int r=0;
-  int h=0;
-
-  if (a)  
+  DateTime n = rtc.now();
+  Alarm alarm;
+ 
+  if (Serial.available())
   {
-    int m = am[i]%60;
-    DateTime b (n.year(),n.month(),n.day(),(int)((am[i]-m)/60),m,0);
+    alarm = Alarm(Serial.readString()); 
+    alarms[0] = alarm.minutes();
     
-    r = b.minute();
-    h= b.hour();
-    
+    Serial.println("Alarm on: "+alarm.ToStr());    
+    Serial.println("Now: "+Date2StrFull(n));
+  }
+ 
+ if (lSec!=n.second())
+ {
+    lcd.setCursor(0, 0);
+    lcd.print(Time2StrHHMM(n,colon));
+    colon = !colon;
+     
+    String toTime= "     ";
+
+  if (FindNextAlarm(n,alarm))  
+  {
+    DateTime b (n.year(),n.month(),n.day(),alarm.hour(),alarm.minute(),0);    
     TimeSpan t =  b-n;
     
-    if ((t.hours()>=0)&&(t.minutes()>=0))
+    if (t.totalseconds()>=0)
     {
-      String w = " "+(String)t.hours()+":"+Norm2Str(t.minutes());
+      String w = " "+TimeSpan2hMM(t);
       if (w.length()<=5) toTime=w;
     }   
   }
   
-  lcd.print(" "+(String)h+":"+Norm2Str(r)+toTime);
-  
+  lcd.print(" "+alarm.ToStr()+toTime);  
   lcd.setCursor(0, 1);
-  lcd.print(Date2Str(n)+" "+DayOfWeek(n));
+  lcd.print(Date2StrWeek(n));
 
   lSec=n.second();
  }
-  else
-  {
-    delay(300);
-  } 
+ else delay(300);   
  
-  if (digitalRead(PIR_PIN)==1) time = millis();  
-  CheckTheLigt(disp_light= millis()-time<20000);    
+if (digitalRead(PIR_PIN)==1) time = millis();  
+if (disp_light= millis()-time<20000) lcd.backlight(); else lcd.noBacklight();  
 }
