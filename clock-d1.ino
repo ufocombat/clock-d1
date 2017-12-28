@@ -25,7 +25,9 @@ boolean colon=true;
 int alarms[] = {    
   11*60,        
   13*60,    
-  18*60  
+  18*60,
+  19*60,
+  20*60,
 };
 
 void setup() {
@@ -90,23 +92,15 @@ void loop() {
  {
     lcd.setCursor(0, 0);
     lcd.print(Time2StrHHMM(n,colon));
-    colon = !colon;
-     
-    String toTime= "     ";
+    colon = !colon;   
 
   if (FindNextAlarm(n,alarm))  
   {
-    DateTime b (n.year(),n.month(),n.day(),alarm.hour(),alarm.minute(),0);    
-    TimeSpan t =  b-n;
-    
-    if (t.totalseconds()>=0)
-    {
-      String w = " "+TimeSpan2hMM(t);
-      if (w.length()<=5) toTime=w;
-    }   
-  }
+    lcd.print(" "+alarm.ToStr());         
+    String w = Min2hMM(alarm.minutes()-Date_minutes(n));
+    lcd.print(" "+(w.length()<=5?w:"    "));  
+  }  
   
-  lcd.print(" "+alarm.ToStr()+toTime);  
   lcd.setCursor(0, 1);
   lcd.print(Date2StrWeek(n));
 
