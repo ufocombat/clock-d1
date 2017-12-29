@@ -20,7 +20,6 @@ LiquidCrystal_I2C lcd(0x3F,16,2); // 1-Выяснить адрес диспле�
 boolean disp_light = true;
 int lSec = 0;
 unsigned long time;
-boolean colon=true;
 
 int alarms[] = {    
   11*60,        
@@ -35,7 +34,7 @@ void setup() {
   digitalWrite(LED_BUILTIN, HIGH);//Off for D1
   pinMode(PIR_PIN, INPUT);
 
-  Serial.begin(57600);
+  Serial.begin(9600);
   delay(100);
 
 //  if (! rtc.begin()) {
@@ -74,6 +73,8 @@ boolean FindNextAlarm(DateTime date, Alarm& alarm)
   return a;
 }
 
+boolean _colon = true;
+
 void loop() {
  
   DateTime n = rtc.now();
@@ -91,8 +92,8 @@ void loop() {
  if (lSec!=n.second())
  {
     lcd.setCursor(0, 0);
-    lcd.print(Time2StrHHMM(n,colon));
-    colon = !colon;   
+    lcd.print(Time2StrHHMM(n,_colon));
+    _colon=!_colon;
 
   if (FindNextAlarm(n,alarm))  
   {
