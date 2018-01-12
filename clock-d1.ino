@@ -50,7 +50,7 @@ void setup() {
   lcd.backlight();
 
     
-  //rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); //Установить часы как Дата Компиляции Скетча
+// rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); //Установить часы как Дата Компиляции Скетча
   // January 21, 2014 at 3alarms you would call:
   // rtc.adjust(DateTime(2017, 1, 31, 14, 17, 0));  
 }
@@ -97,9 +97,20 @@ void loop() {
 
   if (FindNextAlarm(n,alarm))  
   {
-    lcd.print(" "+alarm.ToStr());         
-    String w = Min2hMM(alarm.minutes()-Date_minutes(n));
-    lcd.print(" "+(w.length()<=5?w:"    "));  
+    lcd.print(" "+alarm.ToStr());    
+
+   int delta = alarm.minutes()-Date_minutes(n);
+    
+    if (delta>=600)
+    {
+      int w = delta/60;
+      lcd.print(" "+(String)w+"h ");//+    
+    }
+    else
+    {
+      String w = Min2hMM(delta);
+      lcd.print(" "+(w.length()<=5?w:"    "));    
+    }   
   }  
   
   lcd.setCursor(0, 1);
